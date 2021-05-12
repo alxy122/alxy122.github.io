@@ -222,7 +222,7 @@
 			});
 			
 			function download() {
-			  var save = times + "#" + distanceToMid + "#" + getMean(times) + "#" + getStandardDeviation(times) + "#" + (mistakes/(mistakes + times.length) + "#" + correlation();
+			  var save = times + "#" + distanceToMid + "#" + getMean(times) + "#" + getStandardDeviation(times) + "#" + (mistakes/(mistakes + times.length)) + "#" + correlation();
 			  var blob = new Blob([save], {
 				type: "text/plain;charset=utf-8"
 			  });
