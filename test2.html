@@ -233,14 +233,13 @@
 					document.getElementById("box").style.visibility = 'visible';
 					return;
 				}
-				if(times.length == 20){
+				if((times.length + mistakes) >= 20){
 					clearTimeout(waitToLong);
 					clearTimeout(testStimulusTimeout);
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
-					break;
 				}
-				if (stimulusIsVisible) {
+				else if (stimulusIsVisible) {
 					// record reaction time
 					var noTimeout = recordStimulusReactionTime();
 					if ((!noTimeout && isSquare) || (noTimeout && !isSquare)) {

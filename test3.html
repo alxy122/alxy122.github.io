@@ -141,6 +141,7 @@
 		function startTestTrial() {
 			// reset the stimulus
 			stimulusIsVisible = false;
+			continent = 0;
 
 			// schedule the stimulus to appear after a random amount of time
 			let timeToWaitInSeconds = Math.random() * 4 + 2; // 2 - 6s
@@ -185,6 +186,7 @@
 			asiaCounter = 0;
 			americaCounter = 0;
 			runs = 0;
+			continent = 0;
 			experimentActive = true;
 			startTestTrial();
 		}
@@ -280,7 +282,7 @@
 				}
 			} else if (event.key === '1') {
 				clearTimeout(waitToLong);
-				if(times.length == 10){
+				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 20 && experimentActive && continent == 1){
 					clearTimeout(waitToLong);
 					clearTimeout(testStimulusTimeout);
 					stopExperiment();
@@ -307,7 +309,7 @@
 				
 			} else if (event.key === '2') {
 				clearTimeout(waitToLong);
-				if(times.length == 10){
+				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 20 && experimentActive && continent == 2){
 					clearTimeout(waitToLong);
 					clearTimeout(testStimulusTimeout);
 					stopExperiment();
@@ -332,7 +334,7 @@
 				}
 			} else if (event.key === '3') {
 				clearTimeout(waitToLong);
-				if(times.length == 10){
+				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 20 && experimentActive && continent == 3){
 					clearTimeout(waitToLong);
 					clearTimeout(testStimulusTimeout);
 					stopExperiment();
