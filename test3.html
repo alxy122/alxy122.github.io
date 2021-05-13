@@ -67,10 +67,13 @@
 		let mistakesElement = document.getElementById('err');
 		var width;
 		var height;
-		var mistakes = 0;
+		var mistakes = [];
 		var runs = 0;
 		let countries = [];
 		let continent = 0;
+		var europeCounter;
+		var americaCounter;
+		var asiaCounter;
 		
 		function addCountries(countries){
 			countries[0] = "Deutschland#Europa";
@@ -129,10 +132,10 @@
 			let stdDev = getStandardDeviation(times);
 
 			//countElement.textContent = 'Count: ' + times.length;
-			countElement.textContent = 'Richtig/Falsch: ' + (runs - mistakes) + '/' + mistakes;
+			countElement.textContent = 'Right/Wrong: ' + (runs - mistakes[0] - mistakes[1] - mistakes[2] - mistakes[3]) + '/' + (mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]);
 			meanElement.textContent = 'Mean: ' + Math.round(meanDeltaTime) + ' ms';
 			stdDevElement.textContent = 'SD: ' + Math.round(stdDev) + ' ms';
-			mistakesElement.textContent = 'Error rate: ' + ((mistakes / runs) * 100 + "%");
+			mistakesElement.textContent = 'Error rate: Europe/Asia/America: ' + ((mistakes[1] / europeCounter) * 100 + "%") +"/"+ ((mistakes[2] / asiaCounter) * 100 + "%") + "/" + ((mistakes[3] / americaCounter) * 100 + "%");
 		}
 
 		function startTestTrial() {
@@ -155,7 +158,7 @@
 			document.getElementById("sqr").style.visibility = 'hidden';
 			clearTimeout(testStimulusTimeout);
 			
-			mistakes = mistakes + 1;
+			mistakes[continent] = mistakes[continent] + 1;
 
 			console.log("timeout");
 			startTestTrial();
@@ -174,7 +177,13 @@
 			// reset data and start tests
 			addCountries(countries);
 			times = [];
-			mistakes = 0;
+			mistakes[0] = 0;
+			mistakes[1] = 0;
+			mistakes[2] = 0;
+			mistakes[3] = 0;
+			europeCounter = 0;
+			asiaCounter = 0;
+			americaCounter = 0;
 			runs = 0;
 			experimentActive = true;
 			startTestTrial();
@@ -217,11 +226,14 @@
 			var currentContinent = countries[number].split("#")[1];
 			if(currentContinent == "Europa"){
 				continent = 1;
+				europeCounter++;
 			} else if 
 			(currentContinent == "Asien"){
 				continent = 2;
+				asiaCounter++;
 			} else{
 				continent = 3;
+				americaCounter++;
 			}
 			sqr.textContent = country;
 			sqr.style.width = 100 + "px";
@@ -267,15 +279,15 @@
 					document.getElementById("userForm").style.visibility = "visible";
 				}
 			} else if (event.key === '1') {
+				clearTimeout(waitToLong);
 				if(times.length == 10){
 					clearTimeout(waitToLong);
 					clearTimeout(testStimulusTimeout);
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
-					break;
 				}
-				clearTimeout(waitToLong);
-				if(experimentActive && continent == 1){
+				
+				else if(experimentActive && continent == 1){
 					recordStimulusReactionTime();
 					document.getElementById("sqr").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
@@ -288,21 +300,20 @@
 					} else{
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
-						mistakes = mistakes + 1;
+						mistakes[continent] =  mistakes[continent] + 1;
 						startTestTrial();
 					}
 				}
 				
 			} else if (event.key === '2') {
-				if(times.length == 2){
+				clearTimeout(waitToLong);
+				if(times.length == 10){
 					clearTimeout(waitToLong);
 					clearTimeout(testStimulusTimeout);
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
-					break;
 				}
-				clearTimeout(waitToLong);
-				if(experimentActive && continent == 10){
+				else if(experimentActive && continent == 2){
 					recordStimulusReactionTime();
 					document.getElementById("sqr").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
@@ -315,20 +326,19 @@
 					} else{
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
-						mistakes = mistakes + 1;
+						mistakes[continent] = mistakes[continent] + 1;
 						startTestTrial();
 					}
 				}
 			} else if (event.key === '3') {
-				if(times.length == 2){
+				clearTimeout(waitToLong);
+				if(times.length == 10){
 					clearTimeout(waitToLong);
 					clearTimeout(testStimulusTimeout);
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
-					break;
 				}
-				clearTimeout(waitToLong);
-				if(experimentActive && continent == 10){
+				else if(experimentActive && continent == 3){
 					recordStimulusReactionTime();
 					document.getElementById("sqr").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
@@ -341,7 +351,7 @@
 					} else{
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
-						mistakes = mistakes + 1;
+						mistakes[continent] = mistakes[continent] + 1;
 						startTestTrial();
 					}
 				}
@@ -352,7 +362,7 @@
 			var name = document.forms["userData"]["name"].value;
 			var age = document.forms["userData"]["age"].value;
 			var course = document.forms["userData"]["course"].value;
-			var save = times + "#" + getMean(times) + "#" + getStandardDeviation(times) + "#" + (mistakes / runs );
+			var save = times + "#" + getMean(times) + "#" + getStandardDeviation(times) + "#" + (mistakes[0] / runs ) + "#" + (mistakes[1] / europeCounter ) + "#" + (mistakes[2] / asiaCounter ) + "#" + (mistakes[3] / americaCounter );
 			var blob = new Blob([save], {
 				type: "text/plain;charset=utf-8"
 			});
