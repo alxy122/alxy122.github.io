@@ -157,7 +157,7 @@
 		}
 		function startExperiment() {
 			clearResults(); // clear results of any previous tests
-			instructionElement.textContent = "Press space when the color changes! Press 'a' for results!";
+			instructionElement.textContent = "Press space when a circle appears! Press 'a' for results!";
 
 			// reset data and start tests
 			times = [];
@@ -182,7 +182,7 @@
 			var box = document.getElementById("box");
 			var dimensions = [];
 			dimensions[0] = box.offsetLeft + box.offsetWidth - 50; 	//maxWidth
-			dimensions[1] = box.offsetTop + box.offsetHeight - 50;  	//maxHeight
+			dimensions[1] = box.offsetTop + box.offsetHeight - 50;  //maxHeight
 			dimensions[2] = box.offsetLeft; 						//minWidth
 			dimensions[3] = box.offsetTop; 							//minHeight
 			return dimensions;
