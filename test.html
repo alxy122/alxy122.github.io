@@ -242,6 +242,13 @@
 					document.getElementById("box").style.visibility = 'visible';
 					return;
 				}
+				if(times.length == 20){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+					break;
+				}
 				if (stimulusIsVisible) {
 					// record reaction time
 					if (!recordStimulusReactionTime()) {
@@ -266,6 +273,8 @@
 			} else if (event.key === 'a') {
 				if (experimentActive) {
 					// stop the experiment and show results
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
 				}

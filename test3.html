@@ -267,6 +267,13 @@
 					document.getElementById("userForm").style.visibility = "visible";
 				}
 			} else if (event.key === '1') {
+				if(times.length == 10){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+					break;
+				}
 				clearTimeout(waitToLong);
 				if(experimentActive && continent == 1){
 					recordStimulusReactionTime();
@@ -287,8 +294,15 @@
 				}
 				
 			} else if (event.key === '2') {
+				if(times.length == 2){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+					break;
+				}
 				clearTimeout(waitToLong);
-				if(experimentActive && continent == 2){
+				if(experimentActive && continent == 10){
 					recordStimulusReactionTime();
 					document.getElementById("sqr").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
@@ -306,8 +320,15 @@
 					}
 				}
 			} else if (event.key === '3') {
+				if(times.length == 2){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+					break;
+				}
 				clearTimeout(waitToLong);
-				if(experimentActive && continent == 3){
+				if(experimentActive && continent == 10){
 					recordStimulusReactionTime();
 					document.getElementById("sqr").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
