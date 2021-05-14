@@ -1,0 +1,277 @@
+<html>
+
+<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script
+		src="https://cdn.rawgit.com/eligrey/FileSaver.js/5ed507ef8aa53d8ecfea96d96bc7214cd2476fd2/FileSaver.min.js"></script>
+	<title>Human Capabilities - Reaction test</title>
+	<style>
+		#cir {
+			width: 50px;
+			height: 50px;
+			border-radius: 50px;
+			position: absolute;
+			background-color: lightblue;
+			left: 0px;
+			top: 324px;
+			visibility: hidden;
+		}
+
+		#sqr {
+			width: 50px;
+			height: 50px;
+			position: absolute;
+			background-color: lightblue;
+			left: 0px;
+			top: 324px;
+			visibility: hidden;
+		}
+
+		#box {
+			height: 80%;
+			border-top: 10px solid black;
+			border-right: 10px solid black;
+			border-bottom: 10px solid black;
+			border-left: 10px solid black;
+			visibility: hidden;
+		}
+
+		#userForm {
+			visibility: hidden;
+		}
+	</style>
+</head>
+
+<body>
+	<h1 id="title">Bonus game</h1>
+	<h2 id="instruction">Press [+] to start!</h2>
+	<div id="box"></div>
+	<div id="cir"></div>
+	<div id="sqr"></div>
+	<p id="time"></p>
+	<p id="count"></p>
+	<p id="mean"></p>
+	<p id="sd"></p>
+	<p id="err"></p>
+	<form name="userData" id="userForm">
+		<input type="text" placeholder="name" name="name" style="height: 24px;">
+		<input type="text" placeholder="age" name="age" style="height: 24px;">
+		<input type="text" placeholder="course" name="course" style="height: 24px;">
+		<input type="submit" onClick="download();" value="Download experiment data">
+	</form>
+	
+
+	<script>
+		let experimentActive = false;
+		let stimulusIsVisible = false;
+		let isSquare = false;
+		let stimulusTimestamp;
+		let testStimulusTimeout;
+		let waitToLong;
+		let times = [];
+		let timeElement = document.getElementById('time');
+		let countElement = document.getElementById('count');
+		let instructionElement = document.getElementById('instruction');
+		var width;
+		var height;
+		var runs = 0;
+		
+		function startTestTrial() {
+			// reset the stimulus
+			stimulusIsVisible = false;
+
+			// schedule the stimulus to appear after a random amount of time
+			let timeToWaitInSeconds = ((Math.random() * 4 + 2) * (10/(10 + runs))); // 2 - 6s
+			testStimulusTimeout = setTimeout(showStimulus, timeToWaitInSeconds * 1000);
+		}
+
+		function showStimulus() {
+			changeCirclePosition();
+			stimulusIsVisible = true;
+			stimulusTimestamp = Date.now();
+			waitToLong = setTimeout(handleTimeout, (3000 * (10/(10 + runs))));
+		}
+
+		function showResults() {
+			//countElement.textContent = 'Score: ' + runs;
+		}
+
+		function clearResults() {
+			timeElement.textContent = '';
+			countElement.textContent = '';
+		}
+
+		function handleTimeout() {
+			document.getElementById("cir").style.visibility = 'hidden';
+			document.getElementById("sqr").style.visibility = 'hidden';
+			clearTimeout(testStimulusTimeout);
+			clearTimeout(waitToLong);
+			console.log("timeout");
+			if(isSquare){
+				document.getElementById("cir").style.visibility = 'hidden';
+				document.getElementById("sqr").style.visibility = 'hidden';
+				clearTimeout(waitToLong);
+				clearTimeout(testStimulusTimeout);
+				stopExperiment();
+				document.getElementById("userForm").style.visibility = "visible";
+			}
+			else{
+				runs ++;
+				timeElement.textContent = 'Score: ' + runs;
+				startTestTrial();
+			}
+		}
+
+		function recordStimulusReactionTime() {
+			let deltaTime = Date.now() - stimulusTimestamp;
+			if (deltaTime > (3000 * (10/(10 + runs)))) {
+				return false;
+			}
+			if (!isSquare){
+				return true;
+			}
+			times.push(deltaTime);
+			timeElement.textContent = 'Score: ' + runs; //deltaTime + ' ms';
+			return true;
+		}
+		function startExperiment() {
+			clearResults(); // clear results of any previous tests
+			instructionElement.textContent = "Press space when a square appears! Make no mistake! It steadily speeds up.";
+
+			// reset data and start tests
+			times = [];
+			runs = 0;
+			experimentActive = true;
+			startTestTrial();
+		}
+		function stopExperiment() {
+			// cancel any ongoing tests
+			clearTimeout(testStimulusTimeout);
+			clearTimeout(waitToLong);
+			stimulusIsVisible = false;
+			experimentActive = false;
+
+			// reset instruction and show results
+			instruction.textContent = 'Game over! Press [+] to restart!';
+			showResults();
+		}
+
+		function boxDimensions() {
+			var box = document.getElementById("box");
+			var dimensions = [];
+			dimensions[0] = box.offsetLeft + box.offsetWidth - 50; 	//maxWidth
+			dimensions[1] = box.offsetTop + box.offsetHeight - 50;  //maxHeight
+			dimensions[2] = box.offsetLeft; 						//minWidth
+			dimensions[3] = box.offsetTop; 							//minHeight
+			return dimensions;
+		}
+
+		function changeCirclePosition() {
+			var circ = document.getElementById('cir');
+			var sqr = document.getElementById('sqr');
+			width = Math.random() * (boxDimensions()[0] - 300);
+			height = Math.random() * (boxDimensions()[1] - 300);
+			//runs ++;
+			timeElement.textContent = 'Score: ' + runs;
+			if (width < boxDimensions()[2] + 300) {
+				width = (boxDimensions()[2] + 300);
+			}
+			if (height < boxDimensions()[3] + 300) {
+				height = (boxDimensions()[3] + 300);
+			}
+			var left = width + "px";
+			var top = height + "px";
+			var element;
+			if(Math.round(Math.random()) == 1){
+				element = circ;
+				isSquare = false;
+			}
+			else{
+				element = sqr;
+				isSquare = true;
+			}
+			element.style.left = left;
+			element.style.top = top;
+			if(Math.round(Math.random()) == 1){
+				if( (runs % 20) < 10){
+					element.style.backgroundColor = 'red';
+				}
+				else{	
+					element.style.backgroundColor = 'yellow';
+				}
+			}
+			else{
+				if( (runs % 20) < 10){
+					element.style.backgroundColor = 'blue';
+				}
+				else{	
+					element.style.backgroundColor = 'green';
+				}
+			}
+			
+			element.style.width = (100 + Math.random() * 200) + "px";
+			element.style.height = element.style.width;
+			if(!isSquare){
+				element.style.borderRadius = element.style.width;
+			}
+			element.style.visibility = 'visible';
+		}
+
+		window.addEventListener('keydown', (event) => {
+			if (event.key === '+'){
+				if (!experimentActive) {
+					// start the experiment if it wasn't active
+					document.getElementById("userForm").style.visibility = "hidden";
+					startExperiment();
+					document.getElementById("box").style.visibility = 'visible';
+					return;
+				}
+			}
+			if (event.key === ' ') {
+				clearTimeout(waitToLong);
+				// the user pressed the space key
+				if (!experimentActive) {
+					// start the experiment if it wasn't active
+					return;
+				}
+				if (stimulusIsVisible) {
+					// record reaction time
+					var noTimeout = recordStimulusReactionTime();
+					if ((!noTimeout && isSquare) || (noTimeout && !isSquare)) {
+						document.getElementById("cir").style.visibility = 'hidden';
+						document.getElementById("sqr").style.visibility = 'hidden';
+						clearTimeout(testStimulusTimeout);
+						clearTimeout(waitToLong);
+						stopExperiment();
+						document.getElementById("userForm").style.visibility = "visible";
+					}
+					else{
+						document.getElementById("cir").style.visibility = 'hidden';
+						document.getElementById("sqr").style.visibility = 'hidden';
+						runs ++;
+						timeElement.textContent = 'Score: ' + runs;
+						clearTimeout(testStimulusTimeout);
+						clearTimeout(waitToLong);
+						startTestTrial();
+					}
+				} else {
+					document.getElementById("cir").style.visibility = 'hidden';
+					document.getElementById("sqr").style.visibility = 'hidden';
+					clearTimeout(testStimulusTimeout);
+					clearTimeout(waitToLong);
+					startTestTrial();
+				}
+		}});
+
+		function download() {
+			var name = document.forms["userData"]["name"].value;
+			var age = document.forms["userData"]["age"].value;
+			var course = document.forms["userData"]["course"].value;
+			var save = runs;
+			var blob = new Blob([save], {
+				type: "text/plain;charset=utf-8"
+			});
+			saveAs(blob, "bonus_" +name+"_"+age+"_"+course+".merkt");
+		}
+	</script>
+</body>

@@ -35,7 +35,7 @@
 
 <body>
 	<h1 id="title">User Study</h1>
-	<h2 id="instruction">Press space to start!</h2>
+	<h2 id="instruction">Press [+] to start!</h2>
 	<div id="box"></div>
 	<div id="sqr"></div>
 	<p id="time"></p>
@@ -59,6 +59,9 @@
 		let testStimulusTimeout;
 		let waitToLong;
 		let times = [];
+		let europetimes = [];
+		let asiatimes = [];
+		let americatimes = [];
 		let timeElement = document.getElementById('time');
 		let countElement = document.getElementById('count');
 		let meanElement = document.getElementById('mean');
@@ -133,9 +136,9 @@
 
 			//countElement.textContent = 'Count: ' + times.length;
 			countElement.textContent = 'Right/Wrong: ' + (runs - mistakes[0] - mistakes[1] - mistakes[2] - mistakes[3]) + '/' + (mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]);
-			meanElement.textContent = 'Mean: ' + Math.round(meanDeltaTime) + ' ms';
-			stdDevElement.textContent = 'SD: ' + Math.round(stdDev) + ' ms';
-			mistakesElement.textContent = 'Error rate: Europe/Asia/America: ' + ((mistakes[1] / europeCounter) * 100 + "%") +"/"+ ((mistakes[2] / asiaCounter) * 100 + "%") + "/" + ((mistakes[3] / americaCounter) * 100 + "%");
+			meanElement.textContent = 'Mean: overall: ' + Math.round(meanDeltaTime) + ' ms' + '/europe: ' + Math.round(getMean(europetimes)) + 'ms' + '/asia: ' + Math.round(getMean(asiatimes)) + 'ms' + '/america: ' + Math.round(getMean(americatimes)) + 'ms';
+			stdDevElement.textContent = 'SD: overall: ' + Math.round(stdDev) + ' ms'+ '/europe: ' + Math.round(getStandardDeviation(europetimes)) + 'ms'+ '/asia: ' + Math.round(getStandardDeviation(asiatimes)) + 'ms' + '/america: ' + Math.round(getStandardDeviation(americatimes)) + 'ms';
+			mistakesElement.textContent = 'Error rate: overall: ' + (((mistakes[0]+mistakes[1]+mistakes[2]+mistakes[3]) / runs) * 100 + "%") + '/europe: ' +  ((mistakes[1] / europeCounter) * 100 + "%") +"/asia: "+ ((mistakes[2] / asiaCounter) * 100 + "%") + "/america: " + ((mistakes[3] / americaCounter) * 100 + "%");
 		}
 
 		function startTestTrial() {
@@ -168,16 +171,28 @@
 		function recordStimulusReactionTime() {
 			let deltaTime = Date.now() - stimulusTimestamp;
 			times.push(deltaTime);
+			if(continent == 1){
+				europetimes.push(deltaTime);
+			}
+			if(continent == 2){
+				asiatimes.push(deltaTime);
+			}
+			if(continent == 3){
+				americatimes.push(deltaTime);
+			}
 			timeElement.textContent = deltaTime + ' ms';
 			return true;
 		}
 		function startExperiment() {
 			clearResults(); // clear results of any previous tests
-			instructionElement.textContent = "Guess continent of shown country: Press '1' for Europe, '2' for Asia or '3' for America. Press 'a' for results!";
+			instructionElement.textContent = "Guess continent of shown country: Press [1] for Europe, [2] for Asia or [3] for America. Press [a] for results!";
 
 			// reset data and start tests
 			addCountries(countries);
 			times = [];
+			europetimes = [];
+			asiatimes = [];
+			americatimes = [];
 			mistakes[0] = 0;
 			mistakes[1] = 0;
 			mistakes[2] = 0;
@@ -198,7 +213,7 @@
 			experimentActive = false;
 
 			// reset instruction and show results
-			instruction.textContent = 'Press space to start!';
+			instruction.textContent = 'Press [+] to restart!';
 			showResults();
 		}
 
@@ -244,7 +259,7 @@
 		}
 
 		window.addEventListener('keydown', (event) => {
-			if (event.key === ' ') {
+			if (event.key === '+') {
 				//clearTimeout(waitToLong);
 				// the user pressed the space key
 				if (!experimentActive) {
@@ -254,25 +269,6 @@
 					document.getElementById("box").style.visibility = 'visible';
 					return;
 				}
-				//if (stimulusIsVisible) {
-					// record reaction time
-				//	var noTimeout = recordStimulusReactionTime();
-				//	if ((!noTimeout && isSquare) || (noTimeout && !isSquare)) {
-				//		document.getElementById("sqr").style.visibility = 'hidden';
-				//		clearTimeout(testStimulusTimeout);
-				//		mistakes = mistakes + 1;
-				//		startTestTrial();
-				//	}
-				//	else{
-				//		document.getElementById("sqr").style.visibility = 'hidden';
-				//		clearTimeout(testStimulusTimeout);
-				//		startTestTrial();
-				//	}
-				//} else {
-				//	document.getElementById("sqr").style.visibility = 'hidden';
-				//	clearTimeout(testStimulusTimeout);
-				//	startTestTrial();
-				//}
 			} else if (event.key === 'a') {
 				clearTimeout(waitToLong);
 				if (experimentActive) {
@@ -280,82 +276,80 @@
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
 				}
-			} else if (event.key === '1') {
+			} else if (event.key === '1' && experimentActive) {
 				clearTimeout(waitToLong);
-				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 30 && experimentActive && continent == 1){
-					clearTimeout(waitToLong);
-					clearTimeout(testStimulusTimeout);
-					stopExperiment();
-					document.getElementById("userForm").style.visibility = "visible";
-				}
-				
-				else if(experimentActive && continent == 1){
+				if(continent == 1){
 					recordStimulusReactionTime();
 					document.getElementById("sqr").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
-					startTestTrial();
 				} else{
 					if(!stimulusIsVisible){
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
-						startTestTrial();
 					} else{
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
 						mistakes[continent] =  mistakes[continent] + 1;
-						startTestTrial();
 					}
 				}
-				
-			} else if (event.key === '2') {
-				clearTimeout(waitToLong);
-				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 30 && experimentActive && continent == 2){
+				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 30){
 					clearTimeout(waitToLong);
 					clearTimeout(testStimulusTimeout);
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
 				}
-				else if(experimentActive && continent == 2){
+				else{
+					startTestTrial();
+				}
+			} else if (event.key === '2' && experimentActive) {
+				clearTimeout(waitToLong);
+				if(continent == 2){
 					recordStimulusReactionTime();
 					document.getElementById("sqr").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
-					startTestTrial();
 				} else{
 					if(!stimulusIsVisible){
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
-						startTestTrial();
 					} else{
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
 						mistakes[continent] = mistakes[continent] + 1;
-						startTestTrial();
 					}
 				}
-			} else if (event.key === '3') {
-				clearTimeout(waitToLong);
-				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 30 && experimentActive && continent == 3){
+				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 30){
 					clearTimeout(waitToLong);
 					clearTimeout(testStimulusTimeout);
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
 				}
-				else if(experimentActive && continent == 3){
+				else{
+					startTestTrial();
+				}
+			} else if (event.key === '3' && experimentActive) {
+				clearTimeout(waitToLong);
+				if(continent == 3){
 					recordStimulusReactionTime();
 					document.getElementById("sqr").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
-					startTestTrial();
 				} else{
 					if(!stimulusIsVisible){
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
-						startTestTrial();
 					} else{
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
 						mistakes[continent] = mistakes[continent] + 1;
-						startTestTrial();
 					}
+				}
+				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 30){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+				}
+				else{
+					startTestTrial();
 				}
 			}
 		});
@@ -364,11 +358,11 @@
 			var name = document.forms["userData"]["name"].value;
 			var age = document.forms["userData"]["age"].value;
 			var course = document.forms["userData"]["course"].value;
-			var save = times + "#" + getMean(times) + "#" + getStandardDeviation(times) + "#" + (mistakes[0] / runs ) + "#" + (mistakes[1] / europeCounter ) + "#" + (mistakes[2] / asiaCounter ) + "#" + (mistakes[3] / americaCounter );
+			var save = times + "#" + getMean(times) + "#" + getMean(europetimes)+  "#" + getMean(asiatimes)+ "#" + getMean(americatimes)+"#" + getStandardDeviation(times) + "#" + getStandardDeviation(europetimes) + "#"+ getStandardDeviation(asiatimes) + "#"+ getStandardDeviation(americatimes) + "#"+ ((mistakes[0]+mistakes[1]+mistakes[2]+mistakes[3]) / runs ) + "#" + (mistakes[1] / europeCounter ) + "#" + (mistakes[2] / asiaCounter ) + "#" + (mistakes[3] / americaCounter );
 			var blob = new Blob([save], {
 				type: "text/plain;charset=utf-8"
 			});
-			saveAs(blob, name+"_"+age+"_"+course+".merkt");
+			saveAs(blob, "test3_" +name+"_"+age+"_"+course+".merkt");
 		}
 	</script>
 </body>

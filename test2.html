@@ -44,7 +44,7 @@
 
 <body>
 	<h1 id="title">User Study</h1>
-	<h2 id="instruction">Press space to start!</h2>
+	<h2 id="instruction">Press [+] to start!</h2>
 	<div id="box"></div>
 	<div id="cir"></div>
 	<div id="sqr"></div>
@@ -69,6 +69,8 @@
 		let testStimulusTimeout;
 		let waitToLong;
 		let times = [];
+		let redtimes = [];
+		let bluetimes = [];
 		let timeElement = document.getElementById('time');
 		let countElement = document.getElementById('count');
 		let meanElement = document.getElementById('mean');
@@ -79,6 +81,11 @@
 		var height;
 		var mistakes = 0;
 		var runs = 0;
+		var blue = 0;
+		var red = 0;
+		var bluemistake = 0;
+		var redmistake = 0;
+		var isBlue = false;
 
 		function getMean(data) {
 			let sum = 0;
@@ -105,9 +112,9 @@
 
 			//countElement.textContent = 'Count: ' + times.length;
 			countElement.textContent = 'Right/Wrong: ' + (runs - mistakes) + '/' + mistakes;
-			meanElement.textContent = 'Mean: ' + Math.round(meanDeltaTime) + ' ms';
-			stdDevElement.textContent = 'SD: ' + Math.round(stdDev) + ' ms';
-			mistakesElement.textContent = 'Error rate: ' + ((mistakes / runs) * 100 + "%");
+			meanElement.textContent = 'Mean: overall: ' + Math.round(meanDeltaTime) + ' ms' + "/blue: " + Math.round(getMean(bluetimes)) + 'ms' + "/red: " + Math.round(getMean(redtimes)) + 'ms';
+			stdDevElement.textContent = 'SD: overall: ' + Math.round(stdDev) + ' ms' + "/blue: " + Math.round(getStandardDeviation(bluetimes)) + 'ms' + "/red: " + Math.round(getStandardDeviation(redtimes)) + 'ms';
+			mistakesElement.textContent = 'Error rate: overall: ' + ((mistakes / runs) * 100 + "%") + "/blue: " + ((bluemistake / blue) * 100 + "%") + "/red: " + ((redmistake / red) * 100 + "%");
 		}
 
 		function startTestTrial() {
@@ -146,17 +153,29 @@
 				return true;
 			}
 			times.push(deltaTime);
+			if(isBlue){
+				bluetimes.push(deltaTime);
+			} else{
+				redtimes.push(deltaTime);
+			}
 			timeElement.textContent = deltaTime + ' ms';
 			return true;
 		}
 		function startExperiment() {
 			clearResults(); // clear results of any previous tests
-			instructionElement.textContent = "Press space when a square appears! Press 'a' for results!";
+			instructionElement.textContent = "Press space when a square appears! Press [a] for results!";
 
 			// reset data and start tests
 			times = [];
+			redtimes = [];
+			bluetimes = [];
 			mistakes = 0;
 			runs = 0;
+			blue = 0;
+			bluemistake = 0;
+			redmistake = 0;
+			red = 0;
+			isBlue = false;
 			experimentActive = true;
 			startTestTrial();
 		}
@@ -168,7 +187,7 @@
 			experimentActive = false;
 
 			// reset instruction and show results
-			instruction.textContent = 'Press space to start!';
+			instructionElement.textContent = 'Press [+] to restart!';
 			showResults();
 		}
 
@@ -209,9 +228,13 @@
 			element.style.top = top;
 			if(Math.round(Math.random()) == 1){
 				element.style.backgroundColor = 'red';
+				isBlue = false;
+				red++;
 			}
 			else{
 				element.style.backgroundColor = 'blue';
+				blue++;
+				isBlue = true;
 			}
 			
 			element.style.width = (100 + Math.random() * 200) + "px";
@@ -223,23 +246,10 @@
 		}
 
 		window.addEventListener('keydown', (event) => {
-			if (event.key === ' ') {
+			if (event.key === ' ' && experimentActive) {
 				clearTimeout(waitToLong);
 				// the user pressed the space key
-				if (!experimentActive) {
-					// start the experiment if it wasn't active
-					document.getElementById("userForm").style.visibility = "hidden";
-					startExperiment();
-					document.getElementById("box").style.visibility = 'visible';
-					return;
-				}
-				if((times.length + mistakes) >= 30){
-					clearTimeout(waitToLong);
-					clearTimeout(testStimulusTimeout);
-					stopExperiment();
-					document.getElementById("userForm").style.visibility = "visible";
-				}
-				else if (stimulusIsVisible) {
+				if (stimulusIsVisible) {
 					// record reaction time
 					var noTimeout = recordStimulusReactionTime();
 					if ((!noTimeout && isSquare) || (noTimeout && !isSquare)) {
@@ -247,18 +257,29 @@
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
 						mistakes = mistakes + 1;
-						startTestTrial();
+						if(isBlue){
+							bluemistake++;
+						} else{
+							redmistake++;
+						}
 					}
 					else{
 						document.getElementById("cir").style.visibility = 'hidden';
 						document.getElementById("sqr").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
-						startTestTrial();
 					}
 				} else {
 					document.getElementById("cir").style.visibility = 'hidden';
 					document.getElementById("sqr").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
+				}
+				if((times.length + mistakes) >= 30){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+				}
+				else{
 					startTestTrial();
 				}
 			} else if (event.key === 'a') {
@@ -267,8 +288,14 @@
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
 				}
-			} else if (event.key === 'b') {
-				// ...
+			} else if (event.key === '+') {
+				if (!experimentActive) {
+					// start the experiment if it wasn't active
+					document.getElementById("userForm").style.visibility = "hidden";
+					startExperiment();
+					document.getElementById("box").style.visibility = 'visible';
+					return;
+				}
 			}
 		});
 
@@ -276,11 +303,11 @@
 			var name = document.forms["userData"]["name"].value;
 			var age = document.forms["userData"]["age"].value;
 			var course = document.forms["userData"]["course"].value;
-			var save = times + "#" + getMean(times) + "#" + getStandardDeviation(times) + "#" + (mistakes / runs );
+			var save = times + "#" + getMean(times) + "#" + getMean(bluetimes) +"#" + getMean(redtimes) +"#" + getStandardDeviation(times) + "#" + getStandardDeviation(bluetimes) + "#" + getStandardDeviation(redtimes) + "#" + (mistakes / runs ) + "#" + (bluemistake/blue)+ "#" + (redmistake/red);
 			var blob = new Blob([save], {
 				type: "text/plain;charset=utf-8"
 			});
-			saveAs(blob, name+"_"+age+"_"+course+".merkt");
+			saveAs(blob, "test2_" +name+"_"+age+"_"+course+".merkt");
 		}
 	</script>
 </body>

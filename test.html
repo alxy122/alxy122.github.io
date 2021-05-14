@@ -52,7 +52,7 @@
 
 <body>
 	<h1 id="title">User Study</h1>
-	<h2 id="instruction">Press space to start!</h2>
+	<h2 id="instruction">Press [+] to start!</h2>
 	<div id="box"></div>
 	<div id="cir"></div>
 	<p id="time"></p>
@@ -113,7 +113,7 @@
 			let stdDev = getStandardDeviation(times);
 			let cor = correlation();
 
-			countElement.textContent = 'Count: ' + times.length;
+			countElement.textContent = 'Count: ' + (times.length + mistakes);
 			meanElement.textContent = 'Mean: ' + Math.round(meanDeltaTime) + ' ms';
 			stdDevElement.textContent = 'SD: ' + Math.round(stdDev) + ' ms';
 			mistakesElement.textContent = 'Error rate: ' + ((mistakes / (mistakes + times.length)) * 100 + "%");
@@ -157,7 +157,7 @@
 		}
 		function startExperiment() {
 			clearResults(); // clear results of any previous tests
-			instructionElement.textContent = "Press space when a circle appears! Press 'a' for results!";
+			instructionElement.textContent = "Press space when a circle appears! Press [a] for results!";
 
 			// reset data and start tests
 			times = [];
@@ -174,7 +174,7 @@
 			experimentActive = false;
 
 			// reset instruction and show results
-			instruction.textContent = 'Press space to start!';
+			instruction.textContent = 'Press [+] to restart!';
 			showResults();
 		}
 
@@ -232,41 +232,34 @@
 		}
 
 		window.addEventListener('keydown', (event) => {
-			if (event.key === ' ') {
+			if (event.key === ' ' && experimentActive) {
 				clearTimeout(waitToLong);
 				// the user pressed the space key
-				if (!experimentActive) {
-					// start the experiment if it wasn't active
-					document.getElementById("userForm").style.visibility = "hidden";
-					startExperiment();
-					document.getElementById("box").style.visibility = 'visible';
-					
-				}
-				else if((times.length + mistakes) >= 30){
-					clearTimeout(waitToLong);
-					clearTimeout(testStimulusTimeout);
-					stopExperiment();
-					document.getElementById("userForm").style.visibility = "visible";
-				}
-				else if (stimulusIsVisible) {
+				if (stimulusIsVisible) {
 					// record reaction time
 					if (!recordStimulusReactionTime()) {
 						document.getElementById("cir").style.animationPlayState = 'paused';
 						document.getElementById("cir").style.visibility = 'hidden';
 						clearTimeout(testStimulusTimeout);
 						mistakes = mistakes + 1;
-						startTestTrial();
 					}
 					else {// start next trial
 						document.getElementById("cir").style.animationPlayState = 'paused';
 						document.getElementById("cir").style.visibility = 'hidden';
-						startTestTrial();
 					}
 				} else {
 					document.getElementById("cir").style.animationPlayState = 'paused';
 					document.getElementById("cir").style.visibility = 'hidden';
 					clearTimeout(testStimulusTimeout);
 					mistakes = mistakes + 1;
+				}
+				if((times.length + mistakes) >= 30){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+				}
+				else{
 					startTestTrial();
 				}
 			} else if (event.key === 'a') {
@@ -277,8 +270,13 @@
 					stopExperiment();
 					document.getElementById("userForm").style.visibility = "visible";
 				}
-			} else if (event.key === 'b') {
-				// ...
+			} else if (event.key === '+') {
+				if (!experimentActive) {
+					document.getElementById("userForm").style.visibility = "hidden";
+					startExperiment();
+					document.getElementById("box").style.visibility = 'visible';
+					
+				}
 			}
 		});
 
@@ -290,7 +288,7 @@
 			var blob = new Blob([save], {
 				type: "text/plain;charset=utf-8"
 			});
-			saveAs(blob, name+"_"+age+"_"+course+".merkt");
+			saveAs(blob, "test1_" +name+"_"+age+"_"+course+".merkt");
 		}
 	</script>
 </body>
