@@ -1,0 +1,368 @@
+<html>
+
+<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script
+		src="https://cdn.rawgit.com/eligrey/FileSaver.js/5ed507ef8aa53d8ecfea96d96bc7214cd2476fd2/FileSaver.min.js"></script>
+	<title>Human Capabilities - Reaction test</title>
+	<style>
+		#sqr {
+			width: 400px;
+			height: 100px;
+			position: absolute;
+			font-size: 100px;
+			text-align: center;
+			background-color: white;
+			left: 0px;
+			top: 324px;
+			visibility: hidden;
+		}
+
+		#box {
+			height: 80%;
+			border-top: 10px solid black;
+			border-right: 10px solid black;
+			border-bottom: 10px solid black;
+			border-left: 10px solid black;
+			visibility: hidden;
+		}
+
+		#userForm {
+			visibility: hidden;
+		}
+	</style>
+</head>
+
+<body>
+	<h1 id="title">User Study</h1>
+	<h2 id="instruction">Press [+] to start!</h2>
+	<div id="box"></div>
+	<div id="sqr"></div>
+	<p id="time"></p>
+	<p id="count"></p>
+	<p id="mean"></p>
+	<p id="sd"></p>
+	<p id="err"></p>
+	<form name="userData" id="userForm">
+		<input type="text" placeholder="name" name="name" style="height: 24px;">
+		<input type="text" placeholder="age" name="age" style="height: 24px;">
+		<input type="text" placeholder="course" name="course" style="height: 24px;">
+		<input type="submit" onClick="download();" value="Download experiment data">
+	</form>
+	
+
+	<script>
+		let experimentActive = false;
+		let stimulusIsVisible = false;
+		let isSquare = false;
+		let stimulusTimestamp;
+		let testStimulusTimeout;
+		let waitToLong;
+		let times = [];
+		let europetimes = [];
+		let asiatimes = [];
+		let americatimes = [];
+		let timeElement = document.getElementById('time');
+		let countElement = document.getElementById('count');
+		let meanElement = document.getElementById('mean');
+		let stdDevElement = document.getElementById('sd');
+		let instructionElement = document.getElementById('instruction');
+		let mistakesElement = document.getElementById('err');
+		var width;
+		var height;
+		var mistakes = [];
+		var runs = 0;
+		let countries = [];
+		let continent = 0;
+		var europeCounter;
+		var americaCounter;
+		var asiaCounter;
+		
+		function addCountries(countries){
+			countries[0] = "Deutschland#Europa";
+			countries[1] = "San Marino#Europa";
+			countries[2] = "Vatikanstadt#Europa";
+			countries[3] = "Gibraltar#Europa";
+			countries[4] = "Andorra#Europa";
+			countries[5] = "Monaco#Europa";
+			countries[6] = "Liechtenstein#Europa";
+			countries[7] = "Nordirland#Europa";
+			countries[8] = "Färöer#Europa";
+			countries[9] = "Moldawien#Europa";
+			countries[10] = "Laos#Asien";
+			countries[11] = "Singapur#Asien";
+			countries[12] = "Bhutan#Asien";
+			countries[13] = "Brunei Darussalam#Asien";
+			countries[14] = "Tadschikistan#Asien";
+			countries[15] = "Kirgistan#Asien";
+			countries[16] = "Nepal#Asien";
+			countries[17] = "Nordkorea#Asien";
+			countries[18] = "Vietnam#Asien";
+			countries[19] = "Myanmar#Asien";
+			countries[20] = "Falklandinseln#Amerika";
+			countries[21] = "Trinidad und Tobago#Amerika";
+			countries[22] = "Nicaraguar#Amerika";
+			countries[23] = "Haiti#Amerika";
+			countries[24] = "Grenada #Amerika";
+			countries[25] = "St. Vincent & Grenadinen#Amerika";
+			countries[26] = "St. Lucia#Amerika";
+			countries[27] = "Suriname#Amerika";
+			countries[28] = "Guyana#Amerika";
+			countries[29] = "Guatemala#Amerika";
+		}
+
+		function getMean(data) {
+			let sum = 0;
+			for (let value of data) sum += value;
+			return sum / data.length;
+		}
+
+		function getStandardDeviation(data) {
+			let mean = getMean(data);
+			let squareSum = 0;
+			for (let value of data) squareSum += (value - mean) ** 2;
+			return Math.sqrt(squareSum / data.length);
+		}
+		function clearResults() {
+			timeElement.textContent = '';
+			countElement.textContent = '';
+			meanElement.textContent = '';
+			stdDevElement.textContent = '';
+			mistakesElement.textContent = '';
+		}
+		function showResults() {
+			let meanDeltaTime = getMean(times);
+			let stdDev = getStandardDeviation(times);
+
+			//countElement.textContent = 'Count: ' + times.length;
+			countElement.textContent = 'Right/Wrong: ' + (runs - mistakes[0] - mistakes[1] - mistakes[2] - mistakes[3]) + '/' + (mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]);
+			meanElement.textContent = 'Mean: overall: ' + Math.round(meanDeltaTime) + ' ms' + '/europe: ' + Math.round(getMean(europetimes)) + 'ms' + '/asia: ' + Math.round(getMean(asiatimes)) + 'ms' + '/america: ' + Math.round(getMean(americatimes)) + 'ms';
+			stdDevElement.textContent = 'SD: overall: ' + Math.round(stdDev) + ' ms'+ '/europe: ' + Math.round(getStandardDeviation(europetimes)) + 'ms'+ '/asia: ' + Math.round(getStandardDeviation(asiatimes)) + 'ms' + '/america: ' + Math.round(getStandardDeviation(americatimes)) + 'ms';
+			mistakesElement.textContent = 'Error rate: overall: ' + (((mistakes[0]+mistakes[1]+mistakes[2]+mistakes[3]) / runs) * 100 + "%") + '/europe: ' +  ((mistakes[1] / europeCounter) * 100 + "%") +"/asia: "+ ((mistakes[2] / asiaCounter) * 100 + "%") + "/america: " + ((mistakes[3] / americaCounter) * 100 + "%");
+		}
+
+		function startTestTrial() {
+			// reset the stimulus
+			stimulusIsVisible = false;
+			continent = 0;
+
+			// schedule the stimulus to appear after a random amount of time
+			let timeToWaitInSeconds = Math.random() * 4 + 2; // 2 - 6s
+			testStimulusTimeout = setTimeout(showStimulus, timeToWaitInSeconds * 1000);
+		}
+
+		function showStimulus() {
+			changeCirclePosition();
+			stimulusIsVisible = true;
+			stimulusTimestamp = Date.now();
+			waitToLong = setTimeout(handleTimeout, 3000);
+		}
+
+		function handleTimeout() {
+			document.getElementById("sqr").style.visibility = 'hidden';
+			clearTimeout(testStimulusTimeout);
+			
+			mistakes[continent] = mistakes[continent] + 1;
+
+			console.log("timeout");
+			startTestTrial();
+		}
+
+		function recordStimulusReactionTime() {
+			let deltaTime = Date.now() - stimulusTimestamp;
+			times.push(deltaTime);
+			if(continent == 1){
+				europetimes.push(deltaTime);
+			}
+			if(continent == 2){
+				asiatimes.push(deltaTime);
+			}
+			if(continent == 3){
+				americatimes.push(deltaTime);
+			}
+			timeElement.textContent = deltaTime + ' ms';
+			return true;
+		}
+		function startExperiment() {
+			clearResults(); // clear results of any previous tests
+			instructionElement.textContent = "Guess continent of shown country: Press [1] for Europe, [2] for Asia or [3] for America. Press [a] for results!";
+
+			// reset data and start tests
+			addCountries(countries);
+			times = [];
+			europetimes = [];
+			asiatimes = [];
+			americatimes = [];
+			mistakes[0] = 0;
+			mistakes[1] = 0;
+			mistakes[2] = 0;
+			mistakes[3] = 0;
+			europeCounter = 0;
+			asiaCounter = 0;
+			americaCounter = 0;
+			runs = 0;
+			continent = 0;
+			experimentActive = true;
+			startTestTrial();
+		}
+		function stopExperiment() {
+			// cancel any ongoing tests
+			clearTimeout(testStimulusTimeout);
+			clearTimeout(waitToLong);
+			stimulusIsVisible = false;
+			experimentActive = false;
+
+			// reset instruction and show results
+			instruction.textContent = 'Press [+] to restart!';
+			showResults();
+		}
+
+		function boxDimensions() {
+			var box = document.getElementById("box");
+			var dimensions = [];
+			dimensions[0] = box.offsetLeft + box.offsetWidth - 50; 	//maxWidth
+			dimensions[1] = box.offsetTop + box.offsetHeight - 50;  //maxHeight
+			dimensions[2] = box.offsetLeft; 						//minWidth
+			dimensions[3] = box.offsetTop; 							//minHeight
+			return dimensions;
+		}
+
+		function changeCirclePosition() {
+			var sqr = document.getElementById('sqr');
+			width = 500;
+			height = 300;
+			runs ++;
+			
+			var left = width + "px";
+			var top = height + "px";
+			
+			sqr.style.left = left;
+			sqr.style.top = top;
+			var number = Math.floor(Math.random()*29.8);
+			var country = countries[number].split("#")[0];
+			var currentContinent = countries[number].split("#")[1];
+			if(currentContinent == "Europa"){
+				continent = 1;
+				europeCounter++;
+			} else if 
+			(currentContinent == "Asien"){
+				continent = 2;
+				asiaCounter++;
+			} else{
+				continent = 3;
+				americaCounter++;
+			}
+			sqr.textContent = country;
+			sqr.style.width = 100 + "px";
+			sqr.style.visibility = 'visible';
+			stimulusIsVisible == true;
+		}
+
+		window.addEventListener('keydown', (event) => {
+			if (event.key === '+') {
+				//clearTimeout(waitToLong);
+				// the user pressed the space key
+				if (!experimentActive) {
+					// start the experiment if it wasn't active
+					document.getElementById("userForm").style.visibility = "hidden";
+					startExperiment();
+					document.getElementById("box").style.visibility = 'visible';
+					return;
+				}
+			} else if (event.key === 'a') {
+				clearTimeout(waitToLong);
+				if (experimentActive) {
+					// stop the experiment and show results
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+				}
+			} else if (event.key === '1' && experimentActive) {
+				clearTimeout(waitToLong);
+				if(continent == 1){
+					recordStimulusReactionTime();
+					document.getElementById("sqr").style.visibility = 'hidden';
+					clearTimeout(testStimulusTimeout);
+				} else{
+					if(!stimulusIsVisible){
+						document.getElementById("sqr").style.visibility = 'hidden';
+						clearTimeout(testStimulusTimeout);
+					} else{
+						document.getElementById("sqr").style.visibility = 'hidden';
+						clearTimeout(testStimulusTimeout);
+						mistakes[continent] =  mistakes[continent] + 1;
+					}
+				}
+				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 30){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+				}
+				else{
+					startTestTrial();
+				}
+			} else if (event.key === '2' && experimentActive) {
+				clearTimeout(waitToLong);
+				if(continent == 2){
+					recordStimulusReactionTime();
+					document.getElementById("sqr").style.visibility = 'hidden';
+					clearTimeout(testStimulusTimeout);
+				} else{
+					if(!stimulusIsVisible){
+						document.getElementById("sqr").style.visibility = 'hidden';
+						clearTimeout(testStimulusTimeout);
+					} else{
+						document.getElementById("sqr").style.visibility = 'hidden';
+						clearTimeout(testStimulusTimeout);
+						mistakes[continent] = mistakes[continent] + 1;
+					}
+				}
+				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 30){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+				}
+				else{
+					startTestTrial();
+				}
+			} else if (event.key === '3' && experimentActive) {
+				clearTimeout(waitToLong);
+				if(continent == 3){
+					recordStimulusReactionTime();
+					document.getElementById("sqr").style.visibility = 'hidden';
+					clearTimeout(testStimulusTimeout);
+				} else{
+					if(!stimulusIsVisible){
+						document.getElementById("sqr").style.visibility = 'hidden';
+						clearTimeout(testStimulusTimeout);
+					} else{
+						document.getElementById("sqr").style.visibility = 'hidden';
+						clearTimeout(testStimulusTimeout);
+						mistakes[continent] = mistakes[continent] + 1;
+					}
+				}
+				if((times.length+ mistakes[0] + mistakes[1] + mistakes[2] + mistakes[3]) >= 30){
+					clearTimeout(waitToLong);
+					clearTimeout(testStimulusTimeout);
+					stopExperiment();
+					document.getElementById("userForm").style.visibility = "visible";
+				}
+				else{
+					startTestTrial();
+				}
+			}
+		});
+
+		function download() {
+			var name = document.forms["userData"]["name"].value;
+			var age = document.forms["userData"]["age"].value;
+			var course = document.forms["userData"]["course"].value;
+			var save = times + "#" + getMean(times) + "#" + getMean(europetimes)+  "#" + getMean(asiatimes)+ "#" + getMean(americatimes)+"#" + getStandardDeviation(times) + "#" + getStandardDeviation(europetimes) + "#"+ getStandardDeviation(asiatimes) + "#"+ getStandardDeviation(americatimes) + "#"+ ((mistakes[0]+mistakes[1]+mistakes[2]+mistakes[3]) / runs ) + "#" + (mistakes[1] / europeCounter ) + "#" + (mistakes[2] / asiaCounter ) + "#" + (mistakes[3] / americaCounter );
+			var blob = new Blob([save], {
+				type: "text/plain;charset=utf-8"
+			});
+			saveAs(blob, "test3_" +name+"_"+age+"_"+course+".merkt");
+		}
+	</script>
+</body>
