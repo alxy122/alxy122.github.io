@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mensa Speiseplan – Stuttgart</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  header {
+    background: #002b5e;
+    color: white;
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+  .logo {
+    width: 32px; height: 32px;
+    background: #ff8533;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800; flex-shrink: 0;
+  }
+  header h1 { font-size: 15px; font-weight: 700; }
+  header .sub { font-size: 10px; opacity: 0.6; margin-top: 2px; }
+
+  .loc-bar {
+    background: #001f44;
+    padding: 7px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .loc-label { font-size: 10px; color: rgba(255,255,255,0.45); flex-shrink: 0; }
+  #locSelect {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    color: white;
+    padding: 5px 9px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #locSelect option { background: #002b5e; color: white; }
+
+  /* ── Day strip ── */
+  .day-nav {
+    background: white;
+    border-bottom: 2px solid #e8e8e8;
+  }
+  .day-strip {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 12px;
+  }
+  .day-strip::-webkit-scrollbar { display: none; }
+
+  .day-btn {
+    flex-shrink: 0;
+    min-width: 62px;
+    padding: 9px 6px 7px;
+    text-align: center;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    color: #aaa;
+    border-radius: 4px 4px 0 0;
+    transition: color 0.12s;
+  }
+  .day-btn:hover { color: #555; }
+  .day-btn.active { border-bottom-color: #002b5e; color: #002b5e; font-weight: 600; }
+  .day-btn.today .dn::after { content: " ·"; color: #ff8533; }
+  .day-btn .dn { font-size: 13px; display: block; }
+  .day-btn .dd { font-size: 9.5px; display: block; margin-top: 2px; opacity: 0.65; }
+  .week-sep { flex-shrink: 0; width: 1px; background: #eee; margin: 7px 10px; }
+
+  .price-hint {
+    font-size: 10px; color: #ccc;
+    padding: 3px 16px 4px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: right;
+  }
+
+  /* ── Content ── */
+  .content { padding: 12px 14px 48px; max-width: 720px; margin: 0 auto; }
+
+  /* skeleton */
+  .skel { animation: sh 1.3s ease infinite; border-radius: 8px; }
+  @keyframes sh { 0%,100%{background:#efefef} 50%{background:#e5e5e5} }
+  .sk-hd { height: 10px; width: 80px; margin-bottom: 7px; }
+  .sk-cd { height: 64px; margin-bottom: 8px; }
+
+  .section { margin-bottom: 14px; }
+  .section-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #ccc; padding: 0 2px 6px;
+  }
+
+  .card {
+    background: white; border-radius: 10px;
+    padding: 11px 13px; margin-bottom: 7px;
+    display: flex; align-items: flex-start; gap: 9px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-left: 3px solid #eee;
+    transition: box-shadow 0.15s;
+  }
+  .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .card.vegan   { border-left-color: #22c55e; }
+  .card.veg     { border-left-color: #84cc16; }
+  .card.meat    { border-left-color: #f97316; }
+  .card.poultry { border-left-color: #fbbf24; }
+  .card.fish    { border-left-color: #38bdf8; }
+
+  .ci { font-size: 19px; width: 28px; text-align: center; flex-shrink: 0; padding-top: 1px; }
+  .cb { flex: 1; min-width: 0; }
+  .cn { font-size: 13px; font-weight: 500; line-height: 1.35; }
+  .ct { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+
+  .tag { font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 99px; }
+  .tv    { background: #dcfce7; color: #15803d; }
+  .tveg  { background: #ecfccb; color: #4d7c0f; }
+  .tm    { background: #ffedd5; color: #c2410c; }
+  .tp    { background: #fef9c3; color: #a16207; }
+  .tf    { background: #e0f2fe; color: #0369a1; }
+  .tal   { background: #f3f4f6; color: #9ca3af; }
+
+  .cp { text-align: right; flex-shrink: 0; }
+  .pm { font-size: 16px; font-weight: 700; color: #002b5e; white-space: nowrap; }
+  .pe { font-size: 10px; font-weight: 400; }
+  .pr { font-size: 9px; color: #ccc; margin-top: 2px; white-space: nowrap; }
+
+  .nutr {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 6px;
+  }
+  .nutr-item {
+    font-size: 10px; color: #6b7280;
+    background: #f9fafb; border: 1px solid #f0f0f0;
+    border-radius: 5px; padding: 2px 6px;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .nutr-item b { color: #374151; }
+  .nutr-kcal { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+  .nutr-kcal b { color: #c2410c; }
+
+  .empty {
+    text-align: center; padding: 44px 16px;
+    color: #ccc; font-size: 13px; line-height: 1.8;
+  }
+  .empty a { color: #3b82f6; }
+
+  .err {
+    background: #fff5f5; border: 1px solid #fecaca;
+    border-radius: 10px; padding: 13px 15px;
+    color: #991b1b; font-size: 12px; line-height: 1.6; margin: 10px 0;
+  }
+
+  .footer {
+    text-align: center; font-size: 10px; color: #ddd;
+    padding: 8px 16px 20px;
+  }
+  .footer a { color: #93c5fd; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">S</div>
+  <div>
+    <h1>Mensa Speiseplan – Stuttgart</h1>
+    <div class="sub">Studierendenwerk Stuttgart · via OpenMensa</div>
+  </div>
+</header>
+
+<div class="loc-bar">
+  <span class="loc-label">ORT</span>
+  <select id="locSelect" onchange="onLocChange()">
+    <option value="399">Mensa Stuttgart-Vaihingen</option>
+    <option value="1202">Mensa Central</option>
+    <option value="395">Mensa Musikhochschule (HMDK)</option>
+    <option value="394">Mensa Kunstakademie (ABK)</option>
+    <option value="393">Mensa Ludwigsburg</option>
+    <option value="397">Mensa Esslingen Flandernsstraße</option>
+    <option value="396">Mensa Esslingen Stadtmitte</option>
+  </select>
+</div>
+
+<div class="day-nav">
+  <div class="day-strip" id="dayStrip"></div>
+</div>
+<div class="price-hint">Preise: Studierende · Bedienstete · Gäste</div>
+
+<div class="content" id="content"></div>
+
+<div class="footer">
+  Daten: <a href="https://openmensa.org" target="_blank">OpenMensa API</a>
+  &nbsp;·&nbsp;
+  <a href="https://www.studierendenwerk-stuttgart.de/essen/speiseplan" target="_blank">Studierendenwerk Stuttgart ↗</a>
+</div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const GRP_ICON = {
+  "vorspeise":"🍲","veganer renner":"🌱","hauptgericht":"🍽️",
+  "mensa special":"⭐","loaded fries":"🍟","buffet":"🥗","beilage":"🥦",
+  "dessert":"🍮","suppe":"🍵","salat":"🥗"
+};
+const DIET_CFG = {
+  vegan:   { icon:"🌱", tag:"tv",   card:"vegan",   label:"vegan" },
+  veg:     { icon:"🌿", tag:"tveg", card:"veg",     label:"vegetarisch" },
+  meat:    { icon:"🥩", tag:"tm",   card:"meat",    label:"Fleisch" },
+  poultry: { icon:"🐔", tag:"tp",   card:"poultry", label:"Geflügel" },
+  fish:    { icon:"🐟", tag:"tf",   card:"fish",    label:"Fisch" },
+  other:   { icon:"🍽️", tag:"",    card:"",         label:"" },
+};
+const SKIP_NOTE = /^(vegan|vegetarisch|geflügel|rind|schwein|lamm|fisch|lachs)$/i;
+const SKIP_PREFIX = /^(nährwerte|mit |aus |enthält|ge|kann )/i;
+
+const DN = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const MN = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const cache = {};
+let currentDay = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const iso = d => d.toISOString().slice(0,10);
+const addDays = (d,n) => { const c=new Date(d); c.setDate(c.getDate()+n); return c; };
+const getMonday = d => {
+  const c=new Date(d), day=c.getDay();
+  c.setDate(c.getDate()-(day===0?6:day-1)); return c;
+};
+const fmtShort = d => `${d.getDate()}. ${MN[d.getMonth()]}`;
+const fmtPrice = p => p != null ? p.toFixed(2).replace('.',',') : '–';
+const locId = () => document.getElementById('locSelect').value;
+
+function detectDiet(notes) {
+  const n = notes.map(s => s.toLowerCase());
+  if (n.includes('vegan')) return 'vegan';
+  if (n.includes('vegetarisch')) return 'veg';
+  if (n.some(s => s.includes('geflügel') || s.includes('hähnchen') || s.includes('pute'))) return 'poultry';
+  if (n.some(s => s.includes('fisch') || s.includes('lachs') || s.includes('forelle'))) return 'fish';
+  if (n.some(s => s.includes('rind') || s.includes('schwein') || s.includes('lamm'))) return 'meat';
+  return 'other';
+}
+
+function allergenTags(notes) {
+  return notes
+    .filter(n => !SKIP_NOTE.test(n.trim()) && !SKIP_PREFIX.test(n.trim()))
+    .slice(0, 4);
+}
+
+function parseNutrition(notes) {
+  const raw = notes.find(n => /^nährwerte/i.test(n.trim()));
+  if (!raw) return null;
+  const get = rx => { const m = raw.match(rx); return m ? parseFloat(m[1]) : null; };
+  return {
+    kcal: get(/(\d+(?:\.\d+)?)\s*kcal/i),
+    kj:   get(/(\d+(?:\.\d+)?)\s*kj/i),
+    fat:  get(/Fett:\s*([\d.]+)/i),
+    carb: get(/Kohlenhydrate:\s*([\d.]+)/i),
+    prot: get(/Eiweiß:\s*([\d.]+)/i),
+    salt: get(/Salz:\s*([\d.]+)/i),
+  };
+}
+
+function fmtG(v) { return v != null ? v.toFixed(1).replace('.',',') + ' g' : null; }
+
+function renderNutrition(notes) {
+  const n = parseNutrition(notes);
+  if (!n) return '';
+  const items = [];
+  if (n.kcal) items.push(`<span class="nutr-item nutr-kcal">🔥 <b>${Math.round(n.kcal)} kcal</b></span>`);
+  if (n.fat  != null) items.push(`<span class="nutr-item">Fett <b>${fmtG(n.fat)}</b></span>`);
+  if (n.carb != null) items.push(`<span class="nutr-item">KH <b>${fmtG(n.carb)}</b></span>`);
+  if (n.prot != null) items.push(`<span class="nutr-item">Eiweiß <b>${fmtG(n.prot)}</b></span>`);
+  if (n.salt != null) items.push(`<span class="nutr-item">Salz <b>${fmtG(n.salt)}</b></span>`);
+  return items.length ? `<div class="nutr">${items.join('')}</div>` : '';
+}
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+async function fetchDay(ds) {
+  const key = `${locId()}_${ds}`;
+  if (cache[key] !== undefined) return cache[key];
+
+  const url = `https://openmensa.org/api/v2/canteens/${locId()}/days/${ds}/meals`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const meals = await resp.json();
+  cache[key] = Array.isArray(meals) ? meals : [];
+  return cache[key];
+}
+
+// ── Day strip ─────────────────────────────────────────────────────────────────
+function buildStrip() {
+  const strip = document.getElementById('dayStrip');
+  strip.innerHTML = '';
+  const today = new Date();
+  const mon1 = getMonday(today);
+  const mon2 = addDays(mon1, 7);
+
+  [mon1, mon2].forEach((mon, wi) => {
+    if (wi > 0) {
+      const sep = document.createElement('div');
+      sep.className = 'week-sep';
+      strip.appendChild(sep);
+    }
+    for (let i = 0; i < 5; i++) {
+      const d = addDays(mon, i);
+      const ds = iso(d);
+      const isToday = ds === iso(today);
+      const btn = document.createElement('div');
+      btn.id = `btn-${ds}`;
+      btn.className = 'day-btn' + (isToday ? ' today' : '') + (ds === currentDay ? ' active' : '');
+      btn.innerHTML = `<span class="dn">${DN[d.getDay()]}</span><span class="dd">${fmtShort(d)}</span>`;
+      btn.onclick = () => selectDay(ds);
+      strip.appendChild(btn);
+    }
+  });
+}
+
+// ── Select day ────────────────────────────────────────────────────────────────
+async function selectDay(ds) {
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`btn-${ds}`);
+  if (btn) btn.classList.add('active');
+  currentDay = ds;
+
+  if (!cache[`${locId()}_${ds}`]) showSkeleton();
+
+  try {
+    const meals = await fetchDay(ds);
+    renderMeals(meals);
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+function onLocChange() {
+  if (currentDay) selectDay(currentDay);
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function showSkeleton() {
+  document.getElementById('content').innerHTML = `
+    <div class="section">
+      <div class="sk-hd skel"></div>
+      <div class="sk-cd skel"></div><div class="sk-cd skel"></div>
+    </div>
+    <div class="section">
+      <div class="sk-hd skel"></div>
+      <div class="sk-cd skel"></div><div class="sk-cd skel"></div><div class="sk-cd skel"></div>
+    </div>`;
+}
+
+function showError(msg) {
+  document.getElementById('content').innerHTML = `
+    <div class="err">⚠️ Daten konnten nicht geladen werden: <em>${msg}</em><br>
+    Bitte Internetverbindung prüfen.</div>`;
+}
+
+function renderMeals(meals) {
+  if (!meals.length) {
+    document.getElementById('content').innerHTML =
+      `<div class="empty">😴 Keine Gerichte verfügbar.<br>Mensa geschlossen oder keine Daten für diesen Tag.<br><br>
+      <a href="https://www.studierendenwerk-stuttgart.de/essen/speiseplan" target="_blank">Auf der Website prüfen ↗</a></div>`;
+    return;
+  }
+
+  const groups = {};
+  meals.forEach(m => {
+    const cat = m.category || 'Sonstiges';
+    (groups[cat] = groups[cat] || []).push(m);
+  });
+
+  let html = '';
+  for (const [cat, items] of Object.entries(groups)) {
+    const icon = GRP_ICON[cat.toLowerCase()] || '🍽️';
+    html += `<div class="section"><div class="section-label">${icon} ${cat.toUpperCase()}</div>`;
+    for (const m of items) {
+      const diet = detectDiet(m.notes || []);
+      const d = DIET_CFG[diet];
+      const allergene = allergenTags(m.notes || []);
+      html += `<div class="card ${d.card}">
+        <div class="ci">${d.icon}</div>
+        <div class="cb">
+          <div class="cn">${m.name}</div>
+          <div class="ct">
+            ${d.label ? `<span class="tag ${d.tag}">${d.label}</span>` : ''}
+            ${allergene.map(a => `<span class="tag tal">${a}</span>`).join('')}
+          </div>
+          ${renderNutrition(m.notes || [])}
+        </div>
+        <div class="cp">
+          <div class="pm"><span class="pe">€ </span>${fmtPrice(m.prices?.students)}</div>
+          <div class="pr">${fmtPrice(m.prices?.employees)} / ${fmtPrice(m.prices?.others)}</div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  document.getElementById('content').innerHTML = html;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function () {
+  const today = new Date();
+  const day = today.getDay();
+  const offset = day === 0 ? 1 : day === 6 ? 2 : 0;
+  currentDay = iso(addDays(today, offset));
+  buildStrip();
+  selectDay(currentDay);
+})();
+</script>
+</body>
+</html>
